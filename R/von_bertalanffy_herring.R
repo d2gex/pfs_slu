@@ -4,6 +4,7 @@ library(minpack.lm)
 library(ggpubr)
 library(FSA)
 
+vbT <- vbFuns("typical")
 plot_vbf <-
   function (data,
             title,
@@ -77,8 +78,8 @@ b <- age_linear_model$coefficients[['(Intercept)']]
 # Linf * (1 - e^-k) + Lt*e^-k = mx + b iff:
 # --> x = e^-k --> k = -ln(x)
 # --> b = Linf * (1 - e^-k) = Linf * (1 - x) --> Linf = b/(1-x)
-k <- -log(m)
-linf <- b / (1 - m)
+k_n1 <- -log(m)
+linf_n1 <- b / (1 - m)
 
 # (6) calculate t0 = t + 1/k (ln (linf-lt) / linf)
 # -> we get the most populated class
@@ -87,14 +88,15 @@ age <- (herring_data %>%
           summarise(num_individuals = n()) %>%
           arrange(desc(num_individuals)))[1, ]$age
 l_age = h_df_mean_ages[h_df_mean_ages$age == 0, ]$x
-t0 = 0 + (1 / k) * (log ((linf - l_age) / linf))
+t0_n1 = 0 + (1 / k_n1) * (log ((linf_n1 - l_age) / linf_n1))
 
 # (7) plot naive von bertalanffy function
 
 h_t_length_naive <- data.frame(t = herring_data$age,
                                f_length = herring_data$length)
 
-lt_naive <- linf * (1 - exp(-k * (h_t_length_naive$t - t0)))
+lt_naive <-
+  linf_n1 * (1 - exp(-k_n1 * (h_t_length_naive$t - t0_n1)))
 
 vbf_naive <-
   data.frame(t = h_t_length_naive$t, vbf_length = lt_naive) %>%
@@ -109,20 +111,20 @@ h_t_length_nq <-
     as.numeric(x))
 
 # --> Estimate the new parameters
-vbT <- vbFuns("typical")
 formula <- f_length ~ lt_naive
-adjusted_vbf <- nls(
+adjusted_vbf_nq <- nls(
   f_length ~ vbT(t, linf, k, t0),
   data = h_t_length_nq,
-  start = list(linf = linf, k = k, t0 = t0)
+  start = list(linf = linf_n1, k = k_n1, t0 = t0_n1)
 )
-vbf_nq_coefs <- coef(summary(adjusted_vbf))
+vbf_nq_coefs <- coef(summary(adjusted_vbf_nq))
 linf_nq <- vbf_nq_coefs[1]
 k_nq <- vbf_nq_coefs[2]
 t0_nq <- vbf_nq_coefs[3]
 
 
-lt_non_quarter <- linf_nq * (1 - exp(-k_nq * (h_t_length_nq$t - t0_nq)))
+lt_non_quarter <-
+  linf_nq * (1 - exp(-k_nq * (h_t_length_nq$t - t0_nq)))
 
 vbf_nq <-
   data.frame(t = herring_data$age, vbf_length = lt_non_quarter) %>%
@@ -144,6 +146,30 @@ h_t_length_q <- data.frame(
     quarter == 4 ~ t + 0.85
   ))
 
+# --> find again naive coefficients
+vbf_q_coefs <-
+  vbStarts(f_length ~ t, data = h_t_length_q, type = "typical")
+linf_n2 <- vbf_q_coefs[1]
+k_n2 <- vbf_q_coefs[2]
+t0_n2 <- vbf_q_coefs[3]
+
+formula <- f_length ~ lt_naive
+adjusted_vbf_q <- nls(
+  f_length ~ vbT(t, linf, k, t0),
+  data = h_t_length_q,
+  start = list(linf = linf_n2, k = k_n2, t0 = t0_n2)
+)
+vbf_nq_coefs <- coef(summary(adjusted_vbf_q))
+linf_q <- vbf_nq_coefs[1]
+k_q <- vbf_nq_coefs[2]
+t0_q <- vbf_nq_coefs[3]
+
+lt_quarter <-
+  linf_q * (1 - exp(-k_q * (h_t_length_q$t - t0_q)))
+
+vbf_q <-
+  data.frame(t = herring_data$age, vbf_length = lt_quarter) %>%
+  arrange(t)
 
 
 # (11) draw all graphs
@@ -172,12 +198,12 @@ vbf_naive_graph <-
     "Initial Von Bertalanffy curve after solving the equation",
     "Age (years)",
     "Length (cms)",
-    k,
-    linf,
-    t0,
+    k_n1,
+    linf_n1,
+    t0_n1,
   )
 
-# --> Plot estimated Von Bertlanffy result
+# --> Plot estimated Von Bertlanffy result with no quarters
 
 vbf_nq_graph <-
   plot_vbf (
@@ -188,4 +214,17 @@ vbf_nq_graph <-
     k_nq,
     linf_nq,
     t0_nq,
+  )
+
+# --> Plot estimated Von Bertlanffy result with no quarters
+
+vbf_q_graph <-
+  plot_vbf (
+    vbf_q,
+    "Estimated Von Bertalanffy curve after parameter estimations (with quarters)",
+    "Age (years)",
+    "Length (cms)",
+    k_q,
+    linf_q,
+    t0_q,
   )
