@@ -3,6 +3,50 @@ library(dplyr)
 library(minpack.lm)
 library(ggpubr)
 
+plot_vbf <-
+  function (title,
+            x_label,
+            y_label,
+            k,
+            linf,
+            t0,
+            c = NULL,
+            s = NULL) {
+    return (
+      ggplot(data = vbf_naive, aes(x = t, y = vbf_length)) +
+        geom_point() +
+        geom_line() +
+        ggtitle(title) +
+        xlab(x_label) +
+        ylab(y_label) +
+        theme_bw() +
+        theme(plot.title = element_text(
+          size = 12,
+          hjust = 0.5,
+          face = "bold"
+        )) +
+        annotate(
+          "text",
+          x = 1,
+          y = 200,
+          label = paste("K:", round(k, 4))
+        ) +
+        annotate(
+          "text",
+          x = 1,
+          y = 190,
+          label = paste("Linf:", round(linf, 4))
+        ) +
+        annotate(
+          "text",
+          x = 1,
+          y = 180,
+          label = paste("t0:", round(t0, 4))
+        )
+    )
+    
+  }
+
 # (1) read the datafarame
 herring_data <- read.csv("data/herring_data_221116.csv")
 
@@ -46,11 +90,11 @@ t0 = 0 + (1 / k) * (log ((linf - l_age) / linf))
 
 # (7) plot naive von bertalanffy function
 
-vbf_naive <- data.frame(age = herring_data$age,
-                        vbf = linf * (1 - exp(-k * (
+vbf_naive <- data.frame(t = herring_data$age,
+                        vbf_length = linf * (1 - exp(-k * (
                           herring_data$age - t0
                         )))) %>%
-  arrange(age)
+  arrange(t)
 
 
 
@@ -71,13 +115,14 @@ adjusted_vbf <- nls(
   start = list(linf = linf, k = k, t0 = t0)
 )
 vbf_nq_coefs <- coef(summary(adjusted_vbf))
-linf_nq<- vbf_nq_coefs[1]
+linf_nq <- vbf_nq_coefs[1]
 k_nq <- vbf_nq_coefs[2]
 t0_nq <- vbf_nq_coefs[3]
 
 lt_non_quarter <- linf_nq * (1 - exp(-k_nq * (t - t0_nq)))
 
-vbf_nq <- data.frame(t = herring_data$age, vbf_length =lt_non_quarter ) %>%
+vbf_nq <-
+  data.frame(t = herring_data$age, vbf_length = lt_non_quarter) %>%
   arrange(t)
 
 # (10) draw all graphs
@@ -98,50 +143,26 @@ lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
 
 
 # --> Plot naive Von Bertlanffy result
-vbf_naive_graph <- ggplot(data = vbf_naive, aes(x = t, y = vbf_length)) +
-  geom_point() +
-  geom_line() +
-  ggtitle("Initial Von Bertalanffy curve after solving the equation") +
-  xlab("Age (years)") +
-  ylab("Length (cms)") +
-  theme_bw() +
-  theme(plot.title = element_text(size = 12,
-                                  hjust = 0.5,
-                                  face = "bold")) +
-  annotate("text",
-           x = 1,
-           y = 200,
-           label = paste("K:", round(k, 4))) +
-  annotate("text",
-           x = 1,
-           y = 190,
-           label = paste("Linf:", round(linf, 4))) +
-  annotate("text",
-           x = 1,
-           y = 180,
-           label = paste("t0:", round(t0, 4)))
+
+vbf_naive_graph <-
+  plot_vbf (
+    "Initial Von Bertalanffy curve after solving the equation",
+    "Age (years)",
+    "Length (cms)",
+    k,
+    linf,
+    t0,
+  )
 
 # --> Plot estimated Von Bertlanffy result
 
-vbf_non_quarter_graph <- ggplot(data = vbf_nq, aes(x = t, y = vbf_length)) +
-  geom_point() +
-  geom_line() +
-  ggtitle("Estimated Von Bertalanffy curve after parameter estimations (no quarters)") +
-  xlab("Age (years)") +
-  ylab("Length (cms)") +
-  theme_bw() +
-  theme(plot.title = element_text(size = 12,
-                                  hjust = 0.5,
-                                  face = "bold")) +
-  annotate("text",
-           x = 1,
-           y = 200,
-           label = paste("K:", round(k_nq, 4))) +
-  annotate("text",
-           x = 1,
-           y = 190,
-           label = paste("Linf:", round(linf_nq, 4))) +
-  annotate("text",
-           x = 1,
-           y = 180,
-           label = paste("t0:", round(t0_nq, 4)))
+vbf_naive_graph <-
+  plot_vbf (
+    "Estimated Von Bertalanffy curve after parameter estimations (no quarters)",
+    "Age (years)",
+    "Length (cms)",
+    k_nq,
+    linf_nq,
+    t0_nq,
+  )
+
