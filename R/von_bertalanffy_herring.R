@@ -62,19 +62,27 @@ h_t_length <-
   mutate_all(function(x)
     as.numeric(x))
 
+# --> Estimate the new parameters
 lt <- linf * (1 - exp(-k * (t - t0)))
 formula <- f_length ~ lt
-
 adjusted_vbf <- nls(
   f_length ~ vbT(t, linf, k, t0),
   data = h_t_length,
   start = list(linf = linf, k = k, t0 = t0)
 )
+vbf_nq_coefs <- coef(summary(adjusted_vbf))
+linf_nq<- vbf_nq_coefs[1]
+k_nq <- vbf_nq_coefs[2]
+t0_nq <- vbf_nq_coefs[3]
 
+lt_non_quarter <- linf_nq * (1 - exp(-k_nq * (t - t0_nq)))
 
-# (x) draw all graphs
+vbf_nq <- data.frame(t = herring_data$age, vbf_length =lt_non_quarter ) %>%
+  arrange(t)
 
-# --> Polot lt vs lt+1 slope
+# (10) draw all graphs
+
+# --> Plot lt vs lt+1 slope
 lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
   geom_point() +
   stat_smooth(method = "lm", col = "red") +
@@ -89,8 +97,8 @@ lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
   stat_regline_equation(label.y = 230, aes(label = ..rr.label..))
 
 
-# Plot naive Von Bertlanffy result
-vbv_naive_graph <- ggplot(data = vbf_naive, aes(x = age, y = vbf)) +
+# --> Plot naive Von Bertlanffy result
+vbf_naive_graph <- ggplot(data = vbf_naive, aes(x = t, y = vbf_length)) +
   geom_point() +
   geom_line() +
   ggtitle("Initial Von Bertalanffy curve after solving the equation") +
@@ -112,3 +120,28 @@ vbv_naive_graph <- ggplot(data = vbf_naive, aes(x = age, y = vbf)) +
            x = 1,
            y = 180,
            label = paste("t0:", round(t0, 4)))
+
+# --> Plot estimated Von Bertlanffy result
+
+vbf_non_quarter_graph <- ggplot(data = vbf_nq, aes(x = t, y = vbf_length)) +
+  geom_point() +
+  geom_line() +
+  ggtitle("Estimated Von Bertalanffy curve after parameter estimations (no quarters)") +
+  xlab("Age (years)") +
+  ylab("Length (cms)") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 12,
+                                  hjust = 0.5,
+                                  face = "bold")) +
+  annotate("text",
+           x = 1,
+           y = 200,
+           label = paste("K:", round(k_nq, 4))) +
+  annotate("text",
+           x = 1,
+           y = 190,
+           label = paste("Linf:", round(linf_nq, 4))) +
+  annotate("text",
+           x = 1,
+           y = 180,
+           label = paste("t0:", round(t0_nq, 4)))
