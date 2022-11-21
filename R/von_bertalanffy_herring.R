@@ -1,6 +1,7 @@
 library(ggplot2)
 library(dplyr)
-
+library(minpack.lm)
+library(ggpubr)
 
 # (1) read the datafarame 
 herring_data <- read.csv("data/herring_data_221116.csv") 
@@ -40,8 +41,8 @@ age <- (herring_data %>%
   group_by(age) %>% 
   summarise(num_individuals = n()) %>% 
   arrange(desc(num_individuals)))[1, ]$age
-l_age = h_df_mean_ages[h_df_mean_ages$age == 3, ]$x
-t0 = age + (1/k) * (log ((linf - l_age) / linf))
+l_age = h_df_mean_ages[h_df_mean_ages$age == 0, ]$x
+t0 = 0 + (1/k) * (log ((linf - l_age) / linf))
 
 # (7) plot naive von bertalanffy function
 
@@ -54,8 +55,39 @@ vbf_naive <- data.frame(age = herring_data$age,
 #   geom_point() +
 #   stat_smooth(method = "lm", col = "red")
 
-ggplot(data = vbf_naive, aes(x = age, y = vbf)) + 
+# ggplot(data = vbf_naive, aes(x = age, y = vbf)) + 
+#   geom_point() +
+#   geom_line()
+
+# (8) Redraw the vbf curve with a more accurate method by estimating
+# the parameters an dusing the 
+
+h_t_length <- data.frame(t =herring_data$age, f_length= herring_data$length) %>% 
+  mutate_all(function(x) as.numeric(x))
+
+lt <- linf * (1 - exp(-k * (t - t0))) 
+formula <- f_length ~ lt
+
+adjusted_vbf <- nls(f_length~vbT(t,linf,k,t0),
+                    data=h_t_length,start=list(linf=linf, k=k, t0=t0))
+
+
+# (x) draw all graphs
+
+lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
   geom_point() +
-  geom_line()
-
-
+  stat_smooth(method = "lm", col = "red") +
+  xlab("Lt (cms)") +
+  ylab("Lt +1 (cms)") +
+  ggtitle("Slope generated from representing Lt vs Lt+1") +
+  theme_bw() +
+  theme(
+    plot.title = element_text(
+      size = 12,
+      hjust = 0.5,
+      face = "bold"
+    )
+  )  +
+  stat_regline_equation(label.y = 240, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 230, aes(label = ..rr.label..))
+  
