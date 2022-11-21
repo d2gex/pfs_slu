@@ -3,20 +3,20 @@ library(dplyr)
 library(minpack.lm)
 library(ggpubr)
 
-# (1) read the datafarame 
-herring_data <- read.csv("data/herring_data_221116.csv") 
+# (1) read the datafarame
+herring_data <- read.csv("data/herring_data_221116.csv")
 
 # (2) Calculate average length per age class
-h_df_mean_ages <- herring_data %>% 
-  arrange(age) %>% 
-  group_by(age) %>% 
+h_df_mean_ages <- herring_data %>%
+  arrange(age) %>%
+  group_by(age) %>%
   summarise(x = mean(length))
 
-# (3) Prepare sequence of lengths to draw an slope between Lt and Lt+1 
+# (3) Prepare sequence of lengths to draw an slope between Lt and Lt+1
 h_df <- h_df_mean_ages %>%
-  mutate(y = lead(x, 1)) %>% 
-  slice(1: n() -1)
-  
+  mutate(y = lead(x, 1)) %>%
+  slice(1:n() - 1)
+
 # (4) find the slope between Lt and Lt+1
 age_linear_model <- lm (data = h_df, y ~ x)
 summary(age_linear_model)
@@ -29,7 +29,7 @@ b <- age_linear_model$coefficients[['(Intercept)']]
 # (5)  Calculate growth and asyntotic value
 # Lt+1 = Linf * (1 - e^-k) + Lt*e-k
 # When fitting a linear model  y = mx + b, then
-# Linf * (1 - e^-k) + Lt*e^-k = mx + b iff: 
+# Linf * (1 - e^-k) + Lt*e^-k = mx + b iff:
 # --> x = e^-k --> k = -ln(x)
 # --> b = Linf * (1 - e^-k) = Linf * (1 - x) --> Linf = b/(1-x)
 k <- -log(m)
@@ -37,43 +37,44 @@ linf <- b / (1 - m)
 
 # (6) calculate t0 = t + 1/k (ln (linf-lt) / linf)
 # -> we get the most populated class
-age <- (herring_data %>% 
-  group_by(age) %>% 
-  summarise(num_individuals = n()) %>% 
-  arrange(desc(num_individuals)))[1, ]$age
-l_age = h_df_mean_ages[h_df_mean_ages$age == 0, ]$x
-t0 = 0 + (1/k) * (log ((linf - l_age) / linf))
+age <- (herring_data %>%
+          group_by(age) %>%
+          summarise(num_individuals = n()) %>%
+          arrange(desc(num_individuals)))[1,]$age
+l_age = h_df_mean_ages[h_df_mean_ages$age == 0,]$x
+t0 = 0 + (1 / k) * (log ((linf - l_age) / linf))
 
 # (7) plot naive von bertalanffy function
 
-vbf_naive <- data.frame(age = herring_data$age, 
-                        vbf = linf * (1 - exp(-k * (herring_data$age - t0)))) %>%
+vbf_naive <- data.frame(age = herring_data$age,
+                        vbf = linf * (1 - exp(-k * (
+                          herring_data$age - t0
+                        )))) %>%
   arrange(age)
 
 
-# ggplot(data = h_df, aes(x = x, y = y)) + 
-#   geom_point() +
-#   stat_smooth(method = "lm", col = "red")
-
-# ggplot(data = vbf_naive, aes(x = age, y = vbf)) + 
-#   geom_point() +
-#   geom_line()
 
 # (8) Redraw the vbf curve with a more accurate method by estimating
-# the parameters an dusing the 
+# the parameters an dusing the
 
-h_t_length <- data.frame(t =herring_data$age, f_length= herring_data$length) %>% 
-  mutate_all(function(x) as.numeric(x))
+h_t_length <-
+  data.frame(t = herring_data$age, f_length = herring_data$length) %>%
+  mutate_all(function(x)
+    as.numeric(x))
 
-lt <- linf * (1 - exp(-k * (t - t0))) 
+lt <- linf * (1 - exp(-k * (t - t0)))
 formula <- f_length ~ lt
 
-adjusted_vbf <- nls(f_length~vbT(t,linf,k,t0),
-                    data=h_t_length,start=list(linf=linf, k=k, t0=t0))
+adjusted_vbf <- nls(
+  f_length ~ vbT(t, linf, k, t0),
+  data = h_t_length,
+  start = list(linf = linf, k = k, t0 = t0)
+)
 
 
 # (x) draw all graphs
 
+# --> Polot lt vs lt+1 slope
 lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
   geom_point() +
   stat_smooth(method = "lm", col = "red") +
@@ -81,13 +82,33 @@ lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
   ylab("Lt +1 (cms)") +
   ggtitle("Slope generated from representing Lt vs Lt+1") +
   theme_bw() +
-  theme(
-    plot.title = element_text(
-      size = 12,
-      hjust = 0.5,
-      face = "bold"
-    )
-  )  +
+  theme(plot.title = element_text(size = 12,
+                                  hjust = 0.5,
+                                  face = "bold"))  +
   stat_regline_equation(label.y = 240, aes(label = ..eq.label..)) +
   stat_regline_equation(label.y = 230, aes(label = ..rr.label..))
-  
+
+
+# Plot naive Von Bertlanffy result
+vbv_naive_graph <- ggplot(data = vbf_naive, aes(x = age, y = vbf)) +
+  geom_point() +
+  geom_line() +
+  ggtitle("Initial Von Bertalanffy curve after solving the equation") +
+  xlab("Age (years)") +
+  ylab("Length (cms)") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 12,
+                                  hjust = 0.5,
+                                  face = "bold")) +
+  annotate("text",
+           x = 1,
+           y = 200,
+           label = paste("K:", round(k, 4))) +
+  annotate("text",
+           x = 1,
+           y = 190,
+           label = paste("Linf:", round(linf, 4))) +
+  annotate("text",
+           x = 1,
+           y = 180,
+           label = paste("t0:", round(t0, 4)))
