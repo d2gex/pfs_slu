@@ -168,8 +168,11 @@ lt_quarter <-
   linf_q * (1 - exp(-k_q * (h_t_length_q$t - t0_q)))
 
 vbf_q <-
-  data.frame(t = herring_data$age, vbf_length = lt_quarter) %>%
+  data.frame(t = h_t_length_q$t, vbf_length = lt_quarter) %>%
   arrange(t)
+
+# (10) Redraw the vbf curve using quarters and a seasonal equation
+
 
 
 # (11) draw all graphs
