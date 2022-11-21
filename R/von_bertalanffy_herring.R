@@ -2,9 +2,11 @@ library(ggplot2)
 library(dplyr)
 library(minpack.lm)
 library(ggpubr)
+library(FSA)
 
 plot_vbf <-
-  function (title,
+  function (data,
+            title,
             x_label,
             y_label,
             k,
@@ -13,7 +15,7 @@ plot_vbf <-
             c = NULL,
             s = NULL) {
     return (
-      ggplot(data = vbf_naive, aes(x = t, y = vbf_length)) +
+      ggplot(data = data, aes(x = t, y = vbf_length)) +
         geom_point() +
         geom_line() +
         ggtitle(title) +
@@ -57,17 +59,16 @@ h_df_mean_ages <- herring_data %>%
   summarise(x = mean(length))
 
 # (3) Prepare sequence of lengths to draw an slope between Lt and Lt+1
-h_df <- h_df_mean_ages %>%
+h_df_initial_slope <- h_df_mean_ages %>%
   mutate(y = lead(x, 1)) %>%
   slice(1:n() - 1)
 
 # (4) find the slope between Lt and Lt+1
-age_linear_model <- lm (data = h_df, y ~ x)
+age_linear_model <- lm (data = h_df_initial_slope, y ~ x)
 summary(age_linear_model)
 age_length_cof <- coef(age_linear_model)
 m <- age_linear_model$coefficients[['x']]
 b <- age_linear_model$coefficients[['(Intercept)']]
-
 
 
 # (5)  Calculate growth and asyntotic value
@@ -84,34 +85,35 @@ linf <- b / (1 - m)
 age <- (herring_data %>%
           group_by(age) %>%
           summarise(num_individuals = n()) %>%
-          arrange(desc(num_individuals)))[1,]$age
-l_age = h_df_mean_ages[h_df_mean_ages$age == 0,]$x
+          arrange(desc(num_individuals)))[1, ]$age
+l_age = h_df_mean_ages[h_df_mean_ages$age == 0, ]$x
 t0 = 0 + (1 / k) * (log ((linf - l_age) / linf))
 
 # (7) plot naive von bertalanffy function
 
-vbf_naive <- data.frame(t = herring_data$age,
-                        vbf_length = linf * (1 - exp(-k * (
-                          herring_data$age - t0
-                        )))) %>%
+h_t_length_naive <- data.frame(t = herring_data$age,
+                               f_length = herring_data$length)
+
+lt_naive <- linf * (1 - exp(-k * (h_t_length_naive$t - t0)))
+
+vbf_naive <-
+  data.frame(t = h_t_length_naive$t, vbf_length = lt_naive) %>%
   arrange(t)
 
-
-
 # (8) Redraw the vbf curve with a more accurate method by estimating
-# the parameters an dusing the
+# the parameters without yet using the
 
-h_t_length <-
+h_t_length_nq <-
   data.frame(t = herring_data$age, f_length = herring_data$length) %>%
   mutate_all(function(x)
     as.numeric(x))
 
 # --> Estimate the new parameters
-lt <- linf * (1 - exp(-k * (t - t0)))
-formula <- f_length ~ lt
+vbT <- vbFuns("typical")
+formula <- f_length ~ lt_naive
 adjusted_vbf <- nls(
   f_length ~ vbT(t, linf, k, t0),
-  data = h_t_length,
+  data = h_t_length_nq,
   start = list(linf = linf, k = k, t0 = t0)
 )
 vbf_nq_coefs <- coef(summary(adjusted_vbf))
@@ -119,16 +121,36 @@ linf_nq <- vbf_nq_coefs[1]
 k_nq <- vbf_nq_coefs[2]
 t0_nq <- vbf_nq_coefs[3]
 
-lt_non_quarter <- linf_nq * (1 - exp(-k_nq * (t - t0_nq)))
+
+lt_non_quarter <- linf_nq * (1 - exp(-k_nq * (h_t_length_nq$t - t0_nq)))
 
 vbf_nq <-
   data.frame(t = herring_data$age, vbf_length = lt_non_quarter) %>%
   arrange(t)
 
-# (10) draw all graphs
+# (9) Redraw the vbf curve with a more accurate method by estimating
+# the parameters by using the quarters
+
+# --> Add age 0.25 to 0.75 to each age
+h_t_length_q <- data.frame(
+  t = herring_data$age,
+  quarter = herring_data$quarter,
+  f_length = herring_data$length
+)  %>%
+  mutate(t = case_when(
+    quarter == 1 ~ t + 0.25,
+    quarter == 2 ~ t + 0.50,
+    quarter == 3 ~ t + 0.75,
+    quarter == 4 ~ t + 0.85
+  ))
+
+
+
+# (11) draw all graphs
 
 # --> Plot lt vs lt+1 slope
-lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
+lt_lt1_graph <-
+  ggplot(data = h_df_initial_slope, aes(x = x, y = y)) +
   geom_point() +
   stat_smooth(method = "lm", col = "red") +
   xlab("Lt (cms)") +
@@ -146,6 +168,7 @@ lt_lt1_graph <- ggplot(data = h_df, aes(x = x, y = y)) +
 
 vbf_naive_graph <-
   plot_vbf (
+    vbf_naive,
     "Initial Von Bertalanffy curve after solving the equation",
     "Age (years)",
     "Length (cms)",
@@ -156,8 +179,9 @@ vbf_naive_graph <-
 
 # --> Plot estimated Von Bertlanffy result
 
-vbf_naive_graph <-
+vbf_nq_graph <-
   plot_vbf (
+    vbf_nq,
     "Estimated Von Bertalanffy curve after parameter estimations (no quarters)",
     "Age (years)",
     "Length (cms)",
@@ -165,4 +189,3 @@ vbf_naive_graph <-
     linf_nq,
     t0_nq,
   )
-
