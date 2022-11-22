@@ -64,12 +64,10 @@ vbf_q_graph <-
 
 outer_grid <-
   ggarrange(
-    plotlist = list(
-      lt_lt1_graph,
-      vbf_naive_graph,
-      vbf_nq_graph,
-      vbf_q_graph
-    ),
+    plotlist = list(lt_lt1_graph,
+                    vbf_naive_graph,
+                    vbf_nq_graph,
+                    vbf_q_graph),
     ncol = 2,
     nrow = 3
   )

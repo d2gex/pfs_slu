@@ -44,8 +44,8 @@ linf_n1 <- b / (1 - m)
 age <- (herring_data %>%
           group_by(age) %>%
           summarise(num_individuals = n()) %>%
-          arrange(desc(num_individuals)))[1, ]$age
-l_age = h_df_mean_ages[h_df_mean_ages$age == 0, ]$x
+          arrange(desc(num_individuals)))[1,]$age
+l_age = h_df_mean_ages[h_df_mean_ages$age == 0,]$x
 t0_n1 = 0 + (1 / k_n1) * (log ((linf_n1 - l_age) / linf_n1))
 
 # (7) plot naive von bertalanffy function
@@ -134,5 +134,3 @@ lt_quarter <-
 vbf_q <-
   data.frame(t = h_t_length_q$t, vbf_length = lt_quarter) %>%
   arrange(t)
-
-
