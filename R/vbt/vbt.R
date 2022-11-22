@@ -5,7 +5,6 @@ library(ggpubr)
 library(FSA)
 
 vbT <- vbFuns("typical")
-vbTSomers <- vbFuns("Somers")
 
 #---------------------------------------------------------------
 #  Naive vbT
