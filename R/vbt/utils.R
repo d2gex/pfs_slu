@@ -27,19 +27,22 @@ plot_vbf <-
           "text",
           x = 1,
           y = 200,
-          label = paste("K:", round(k, 4))
+          label = paste("K:", round(k, 4)),
+          hjust = 0
         ) +
         annotate(
           "text",
           x = 1,
           y = 190,
-          label = paste("Linf:", round(linf, 4))
+          label = paste("Linf:", round(linf, 4)),
+          hjust = 0
         ) +
         annotate(
           "text",
           x = 1,
           y = 180,
-          label = paste("t0:", round(t0, 4))
+          label = paste("t0:", round(t0, 4)),
+          hjust = 0
         )
     )
     
