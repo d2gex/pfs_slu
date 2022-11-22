@@ -19,28 +19,31 @@ plot_vbf <-
         ylab(y_label) +
         theme_bw() +
         theme(plot.title = element_text(
-          size = 12,
+          size = 9,
           hjust = 0.5,
           face = "bold"
         )) +
         annotate(
           "text",
-          x = 1,
-          y = 200,
+          size = 3,
+          x = 5,
+          y = 175,
           label = paste("K:", round(k, 4)),
           hjust = 0
         ) +
         annotate(
           "text",
-          x = 1,
-          y = 190,
+          size = 3,
+          x = 5,
+          y = 165,
           label = paste("Linf:", round(linf, 4)),
           hjust = 0
         ) +
         annotate(
           "text",
-          x = 1,
-          y = 180,
+          size = 3,
+          x = 5,
+          y = 155,
           label = paste("t0:", round(t0, 4)),
           hjust = 0
         )

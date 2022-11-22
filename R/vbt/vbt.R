@@ -6,17 +6,14 @@ library(FSA)
 library(R6)
 
 VonBertalanffy <- R6Class(
-  "Accumulator",
-  list(
+  "VonBertalanffy",
+  public = list(
     data_sample = NULL,
-    linf = NULL,
-    k = NULL,
-    t0 = NULL,
-    vbT = vbFuns("typical"),
+    vbT = NULL,
     
     initialize = function(data_sample) {
       self$data_sample = data_sample
-      
+      self$vbT =  vbFuns("typical")
     },
     
     get_lt_lt1_means = function() {
@@ -57,8 +54,8 @@ VonBertalanffy <- R6Class(
           group_by(age) %>%
           summarise(num_individuals = n()) %>%
           arrange(desc(num_individuals))
-      )[1, ]$age
-      l_age = mean_ages[mean_ages$age == age, ]$x
+      )[1,]$age
+      l_age = lt_lt1_means[lt_lt1_means$age == age,]$x
       t0 = age + (1 / k) * (log ((linf - l_age) / linf))
       return(list(linf = linf, k = k, t0 = t0))
       

@@ -1,54 +1,60 @@
-create_distribution_plot <- function(data_sample) {
-  # Plot distribution
-  mean <- mean(data_sample$age)
-  sd <- sd(data_sample$age)
-  length_interval_100 <- paste0("Length interval: [",
-                                min(data_sample$length),
-                                ",",
-                                max(data_sample$length),
-                                "]cm")
-  graph <- ggplot(data = data_sample) +
-    geom_histogram(
-      mapping = aes(x = age, y = after_stat(density)),
-      fill = "steelblue",
-      colour = "black",
-      binwidth = 1
-    ) +
-    ggtitle(paste("Frequency of ages with", sample_size, "% of the sample")) +
-    stat_function(fun = dnorm, args = list(mean = mean, sd = sd)) +
-    xlab("Age (years)") +
-    ylab('Density') +
-    theme_bw() +
-    theme(plot.title = element_text(
-      size = 12,
-      hjust = 0.5,
-      face = "bold"
-    )) +
-    annotate(
-      "text",
-      x = -0.5,
-      y = 0.3,
-      label = length_interval_100,
-      hjust = 0
-    ) +
-    annotate(
-      "text",
-      x = -0.5,
-      y = 0.27,
-      label = paste("Mean (age):", round(mean, 2)),
-      hjust = 0
-    ) +
-    annotate(
-      "text",
-      x = -0.5,
-      y = 0.24,
-      label = paste("Sd (age):", round(sd, 4)),
-      hjust = 0
-    )
-  
-  return (graph)
-  
-}
+library(ggplot2)
+create_distribution_plot <-
+  function(data_sample, sample_percentage) {
+    # Plot distribution
+    mean <- mean(data_sample$age)
+    sd <- sd(data_sample$age)
+    length_interval_100 <- paste0("Length interval: [",
+                                  min(data_sample$length),
+                                  ",",
+                                  max(data_sample$length),
+                                  "]cm")
+    graph <- ggplot(data = data_sample) +
+      geom_histogram(
+        mapping = aes(x = age, y = after_stat(density)),
+        fill = "steelblue",
+        colour = "black",
+        binwidth = 1
+      ) +
+      ggtitle(paste("Frequency of ages with", sample_percentage, "of the sample")) +
+      stat_function(fun = dnorm, args = list(mean = mean, sd = sd)) +
+      xlab("Age (years)") +
+      ylab('Density') +
+      annotate(
+        "text",
+        size = 3,
+        x = -0.5,
+        y = 0.3,
+        label = length_interval_100,
+        hjust = 0
+      ) +
+      annotate(
+        "text",
+        size = 3,
+        x = -0.5,
+        y = 0.27,
+        label = paste("Mean (age):", round(mean, 2)),
+        hjust = 0
+      ) +
+      annotate(
+        "text",
+        size = 3,
+        x = -0.5,
+        y = 0.24,
+        label = paste("Sd (age):", round(sd, 4)),
+        hjust = 0
+      ) +
+      theme_bw() +
+      theme(plot.title = element_text(
+        size = 9,
+        hjust = 0.5,
+        face = "bold"
+      ))
+    
+    
+    return (graph)
+    
+  }
 
 create_lt_lt1_plot <- function(data_sample) {
   # --> Plot lt vs lt+1 slope
@@ -61,7 +67,7 @@ create_lt_lt1_plot <- function(data_sample) {
       ggtitle("Slope generated from representing Lt vs Lt+1") +
       theme_bw() +
       theme(plot.title = element_text(
-        size = 12,
+        size = 9,
         hjust = 0.5,
         face = "bold"
       ))  +
