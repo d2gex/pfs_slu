@@ -1,128 +1,61 @@
 source("R/vbt/config.R")
+source ("R/vbt/vbt.R")
+source("R/vbt/vbt_plotting.R")
 #---------------------------------------------------------------
 #  Von Bertalanffy with 100% of sampling
 #---------------------------------------------------------------
 
 herring_sample <- herring_data
-source ("R/vbt/vbt.R")
+sample_size = 100
 
-# Plot distribution
-mean_100 <- mean(herring_sample$age)
-sd_100 <- sd(herring_sample$age)
-length_interval_100 <- paste0(
-  "Length interval: [",
-  min(herring_sample$length),
-  ",",
-  max(herring_sample$length),
-  "]cm"
-)
-dis_graph_100 <- ggplot(data = herring_sample) +
-  geom_histogram(
-    mapping = aes(x = age, y = ..density..),
-    fill = "steelblue",
-    colour = "black",
-    binwidth = 1
-  ) +
-  ggtitle("Frequency of ages with the 100% of the sample") +
-  stat_function(fun = dnorm, args = list(mean = mean_100, sd = sd_100)) +
-  xlab("Age (years)") +
-  ylab('Density') +
-  theme_bw() +
-  theme(plot.title = element_text(size = 12,
-                                  hjust = 0.5,
-                                  face = "bold")) +
-  annotate(
-    "text",
-    x = -0.5,
-    y = 0.3,
-    label = length_interval_100,
-    hjust = 0
-  ) +
-  annotate(
-    "text",
-    x = -0.5,
-    y = 0.27,
-    label = paste("Mean:", round(mean_100, 2)),
-    hjust = 0
-  ) +
-  annotate(
-    "text",
-    x = -0.5,
-    y = 0.24,
-    label = paste("Sd:", round(sd_100, 4)),
-    hjust = 0
-  )
+vbf_100 <- VonBertalanffy$new(herring_data)
+mean_ages <- vbf_100$get_lt_lt1_means()
+vbf_initial_params <- vbf_100$find_vbf_initial_params (mean_ages)
+result_naive <- vbf_100$naive(vbf_initial_params)
+result_nq <- vbf_100$estimated()
+result_q <- vbf_100$estimated(is_quarter = TRUE)
 
+title <- "Initial Von Bertalanffy curve after solving the equation"
+# generate sampling distribution
+dist_plot <- create_distribution_plot (herring_sample)
+lt_lt1_plot <- create_lt_lt1_plot(mean_ages)
+vbf_naive_plot <- create_vbf_plot(result_naive$data,
+                                  result_naive$linf,
+                                  result_naive$linf,
+                                  result_naive$t0,
+                                  title)
 
-# --> Plot lt vs lt+1 slope
-lt_lt1_graph_100 <-
-  ggplot(data = h_df_initial_slope, aes(x = x, y = y)) +
-  geom_point() +
-  stat_smooth(method = "lm", col = "red") +
-  xlab("Lt (cms)") +
-  ylab("Lt +1 (cms)") +
-  ggtitle("Slope generated from representing Lt vs Lt+1") +
-  theme_bw() +
-  theme(plot.title = element_text(size = 12,
-                                  hjust = 0.5,
-                                  face = "bold"))  +
-  stat_regline_equation(label.y = 240, aes(label = ..eq.label..)) +
-  stat_regline_equation(label.y = 230, aes(label = ..rr.label..))
+title <-
+  "Estimated Von Bertalanffy curve after parameter estimations (no quarters)"
+vbf_nq_plot <- create_vbf_plot(result_nq$data,
+                               result_nq$linf,
+                               result_nq$linf,
+                               result_nq$t0,
+                               title)
 
-
-# --> Plot naive Von Bertlanffy result
-
-vbf_naive_graph_100 <-
-  plot_vbf (
-    vbf_naive,
-    "Initial Von Bertalanffy curve after solving the equation",
-    "Age (years)",
-    "Length (cms)",
-    k_n1,
-    linf_n1,
-    t0_n1,
-  )
-
-# --> Plot estimated Von Bertlanffy result with no quarters
-
-vbf_nq_graph_100 <-
-  plot_vbf (
-    vbf_nq,
-    "Estimated Von Bertalanffy curve after parameter estimations (no quarters)",
-    "Age (years)",
-    "Length (cms)",
-    k_nq,
-    linf_nq,
-    t0_nq,
-  )
-
-# --> Plot estimated Von Bertlanffy result with no quarters
-
-vbf_q_graph_100 <-
-  plot_vbf (
-    vbf_q,
-    "Estimated Von Bertalanffy curve after parameter estimations (with quarters)",
-    "Age (years)",
-    "Length (cms)",
-    k_q,
-    linf_q,
-    t0_q,
-  )
+title <-
+  "Estimated Von Bertalanffy curve after parameter estimations (with quarters)"
+vbf_q_plot <- create_vbf_plot(result_q$data,
+                              result_q$linf,
+                              result_q$linf,
+                              result_q$t0,
+                              title)
 
 
 first_row_grid <- ggarrange(
-  plotlist = list(dis_graph_100,
-                  lt_lt1_graph_100,
-                  vbf_naive_graph_100),
+  plotlist = list(dist_plot,
+                  lt_lt1_plot,
+                  vbf_naive_plot),
   ncol = 3,
   nrow = 1
 )
 second_row_grid <- ggarrange(
-  plotlist = list(vbf_nq_graph_100,
-                  vbf_q_graph_100),
+  plotlist = list(vbf_nq_plot,
+                  vbf_q_plot),
   ncol = 2,
   nrow = 1
 )
+
 outer_grid_100 <-
   ggarrange(
     plotlist = list(first_row_grid, second_row_grid),
@@ -130,8 +63,47 @@ outer_grid_100 <-
     nrow = 2
   )
 
-outer_grid_100
+# #---------------------------------------------------------------
+# #  Von Bertalanffy with 50% of sampling
+# #---------------------------------------------------------------
+# sample_size <- round(0.5 * nrow(herring_data))
+# herring_sample <- sample_n(herring_data, sample_size)
+# source ("R/vbt/vbt.R")
+# source("R/vbt/vbt_plotting.R")
+#
+# outer_grid_50 <-
+#   ggarrange(
+#     plotlist = list(first_row_grid, second_row_grid),
+#     ncol = 1,
+#     nrow = 2
+#   )
+
 
 #---------------------------------------------------------------
-#  Von Bertalanffy with 75% of sampling
+#  Von Bertalanffy with 25% of sampling
 #---------------------------------------------------------------
+sample_size <- round(0.25 * nrow(herring_data))
+herring_sample <- sample_n(herring_data, sample_size)
+source ("R/vbt/vbt.R")
+source("R/vbt/vbt_plotting.R")
+
+outer_grid_25 <-
+  ggarrange(
+    plotlist = list(first_row_grid, second_row_grid),
+    ncol = 1,
+    nrow = 2
+  )
+
+to_path <-
+  paste(OUTPUT,
+        "/",
+        "vbt_herring_different_sampling.pdf",
+        sep = "")
+
+plots_to_pdf(
+  list(outer_grid_100, outer_grid_50, outer_grid_25),
+  to_path,
+  paper_type,
+  paper_height,
+  paper_width
+)
