@@ -105,10 +105,8 @@ h_t_length_q <- data.frame(
   f_length = herring_data$length
 )  %>%
   mutate(t = case_when(
-    quarter == 1 ~ t + 0,
-    quarter == 2 ~ t + 0.50,
-    quarter == 3 ~ t + 0.75,
-    quarter == 4 ~ t + 0.85
+    quarter == 1 ~ t + 0.125,
+    quarter == 4 ~ t + 0.875
   ))
 
 # --> find again naive coefficients
