@@ -1,60 +1,18 @@
-library(ggplot2)
+source("R/vbt/utils.R")
 library(dplyr)
 library(minpack.lm)
 library(ggpubr)
 library(FSA)
 
 vbT <- vbFuns("typical")
-plot_vbf <-
-  function (data,
-            title,
-            x_label,
-            y_label,
-            k,
-            linf,
-            t0,
-            c = NULL,
-            s = NULL) {
-    return (
-      ggplot(data = data, aes(x = t, y = vbf_length)) +
-        geom_point() +
-        geom_line() +
-        ggtitle(title) +
-        xlab(x_label) +
-        ylab(y_label) +
-        theme_bw() +
-        theme(plot.title = element_text(
-          size = 12,
-          hjust = 0.5,
-          face = "bold"
-        )) +
-        annotate(
-          "text",
-          x = 1,
-          y = 200,
-          label = paste("K:", round(k, 4))
-        ) +
-        annotate(
-          "text",
-          x = 1,
-          y = 190,
-          label = paste("Linf:", round(linf, 4))
-        ) +
-        annotate(
-          "text",
-          x = 1,
-          y = 180,
-          label = paste("t0:", round(t0, 4))
-        )
-    )
-    
-  }
+vbTSomers <- vbFuns("Somers")
 
-# (1) read the datafarame
-herring_data <- read.csv("data/herring_data_221116.csv")
+#---------------------------------------------------------------
+#  Naive vbT
+#---------------------------------------------------------------
 
 # (2) Calculate average length per age class
-h_df_mean_ages <- herring_data %>%
+h_df_mean_ages <- herring_sample %>%
   arrange(age) %>%
   group_by(age) %>%
   summarise(x = mean(length))
@@ -102,8 +60,12 @@ vbf_naive <-
   data.frame(t = h_t_length_naive$t, vbf_length = lt_naive) %>%
   arrange(t)
 
+#---------------------------------------------------------------
+#  vbT with no quarters
+#---------------------------------------------------------------
+
 # (8) Redraw the vbf curve with a more accurate method by estimating
-# the parameters without yet using the
+# the parameters without yet using the quarters
 
 h_t_length_nq <-
   data.frame(t = herring_data$age, f_length = herring_data$length) %>%
@@ -111,9 +73,9 @@ h_t_length_nq <-
     as.numeric(x))
 
 # --> Estimate the new parameters
-formula <- f_length ~ lt_naive
+formula <- f_length ~ vbT(t, linf, k, t0)
 adjusted_vbf_nq <- nls(
-  f_length ~ vbT(t, linf, k, t0),
+  formula = formula,
   data = h_t_length_nq,
   start = list(linf = linf_n1, k = k_n1, t0 = t0_n1)
 )
@@ -130,6 +92,9 @@ vbf_nq <-
   data.frame(t = herring_data$age, vbf_length = lt_non_quarter) %>%
   arrange(t)
 
+#---------------------------------------------------------------
+#  vbT with quarters
+#---------------------------------------------------------------
 # (9) Redraw the vbf curve with a more accurate method by estimating
 # the parameters by using the quarters
 
@@ -140,7 +105,7 @@ h_t_length_q <- data.frame(
   f_length = herring_data$length
 )  %>%
   mutate(t = case_when(
-    quarter == 1 ~ t + 0.25,
+    quarter == 1 ~ t + 0,
     quarter == 2 ~ t + 0.50,
     quarter == 3 ~ t + 0.75,
     quarter == 4 ~ t + 0.85
@@ -153,9 +118,8 @@ linf_n2 <- vbf_q_coefs[1]
 k_n2 <- vbf_q_coefs[2]
 t0_n2 <- vbf_q_coefs[3]
 
-formula <- f_length ~ lt_naive
 adjusted_vbf_q <- nls(
-  f_length ~ vbT(t, linf, k, t0),
+  formula = f_length ~ vbT(t, linf, k, t0),
   data = h_t_length_q,
   start = list(linf = linf_n2, k = k_n2, t0 = t0_n2)
 )
@@ -171,63 +135,4 @@ vbf_q <-
   data.frame(t = h_t_length_q$t, vbf_length = lt_quarter) %>%
   arrange(t)
 
-# (10) Redraw the vbf curve using quarters and a seasonal equation
 
-
-
-# (11) draw all graphs
-
-# --> Plot lt vs lt+1 slope
-lt_lt1_graph <-
-  ggplot(data = h_df_initial_slope, aes(x = x, y = y)) +
-  geom_point() +
-  stat_smooth(method = "lm", col = "red") +
-  xlab("Lt (cms)") +
-  ylab("Lt +1 (cms)") +
-  ggtitle("Slope generated from representing Lt vs Lt+1") +
-  theme_bw() +
-  theme(plot.title = element_text(size = 12,
-                                  hjust = 0.5,
-                                  face = "bold"))  +
-  stat_regline_equation(label.y = 240, aes(label = ..eq.label..)) +
-  stat_regline_equation(label.y = 230, aes(label = ..rr.label..))
-
-
-# --> Plot naive Von Bertlanffy result
-
-vbf_naive_graph <-
-  plot_vbf (
-    vbf_naive,
-    "Initial Von Bertalanffy curve after solving the equation",
-    "Age (years)",
-    "Length (cms)",
-    k_n1,
-    linf_n1,
-    t0_n1,
-  )
-
-# --> Plot estimated Von Bertlanffy result with no quarters
-
-vbf_nq_graph <-
-  plot_vbf (
-    vbf_nq,
-    "Estimated Von Bertalanffy curve after parameter estimations (no quarters)",
-    "Age (years)",
-    "Length (cms)",
-    k_nq,
-    linf_nq,
-    t0_nq,
-  )
-
-# --> Plot estimated Von Bertlanffy result with no quarters
-
-vbf_q_graph <-
-  plot_vbf (
-    vbf_q,
-    "Estimated Von Bertalanffy curve after parameter estimations (with quarters)",
-    "Age (years)",
-    "Length (cms)",
-    k_q,
-    linf_q,
-    t0_q,
-  )
