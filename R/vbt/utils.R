@@ -84,3 +84,11 @@ plots_to_pdf <-
     
     dev.off()
   }
+
+try_until_done <- function(tries, func) {
+  loops = tries
+  success = FALSE
+  while (loops >0 & !success) {
+    try (ret <- myf())
+  }
+}
