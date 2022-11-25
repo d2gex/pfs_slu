@@ -81,23 +81,16 @@ VonBertalanffy <- R6Class(
     },
     
     estimated = function(is_quarter = FALSE) {
+      t_length_data <-
+        data.frame(t = self$data_sample$age,
+                   f_length = self$data_sample$length)
+      
       if (is_quarter) {
-        t_length_data <- data.frame(
-          t = self$data_sample$age,
-          quarter = self$data_sample$quarter,
-          f_length = self$data_sample$length
-        )  %>%
+        t_length_data <- t_length_data  %>%
+          mutate(quarter = self$data_sample$quarter) %>%
           mutate(t = case_when(quarter == 1 ~ t + 0.125,
                                quarter == 4 ~ t + 0.875))
       }
-      else {
-        t_length_data <-
-          data.frame(t = self$data_sample$age,
-                     f_length = self$data_sample$length) %>%
-          mutate_all(function(x)
-            as.numeric(x))
-      }
-      
       t_length_data <- t_length_data %>% mutate_all(function(x)
         as.numeric(x))
       

@@ -1,57 +1,5 @@
 library(ggplot2)
 
-plot_vbf <-
-  function (data,
-            title,
-            x_label,
-            y_label,
-            linf,
-            k,
-            t0,
-            c = NULL,
-            s = NULL) {
-    return (
-      ggplot(data = data, aes(x = t, y = vbf_length)) +
-        geom_point() +
-        geom_line() +
-        ggtitle(title) +
-        xlab(x_label) +
-        ylab(y_label) +
-        theme_bw() +
-        theme(plot.title = element_text(
-          size = 9,
-          hjust = 0.5,
-          face = "bold"
-        )) +
-        annotate(
-          "text",
-          size = 3,
-          x = 5,
-          y = 175,
-          label = paste("K:", round(k, 4)),
-          hjust = 0
-        ) +
-        annotate(
-          "text",
-          size = 3,
-          x = 5,
-          y = 165,
-          label = paste("Linf:", round(linf, 4)),
-          hjust = 0
-        ) +
-        annotate(
-          "text",
-          size = 3,
-          x = 5,
-          y = 155,
-          label = paste("t0:", round(t0, 4)),
-          hjust = 0
-        )
-    )
-    
-  }
-
-
 plots_to_pdf <-
   function(plot_objects,
            filename,
@@ -88,7 +36,7 @@ plots_to_pdf <-
 try_until_done <- function(tries, func) {
   loops = tries
   success = FALSE
-  while (loops >0 & !success) {
+  while (loops > 0 & !success) {
     try (ret <- myf())
   }
 }
