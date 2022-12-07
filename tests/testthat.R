@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/reference/test_package.html#special-files
 
 library(testthat)
-library(pfs_slu)
+library(pfsslu)
 
-test_check("pfs_slu")
+test_check("pfsslu")
