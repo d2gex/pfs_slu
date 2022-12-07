@@ -24,3 +24,40 @@ calculate_abundance <- function(area, num_fish, to_km = FALSE) {
   }
   return (round(abundance, 4))
 }
+
+select_working_data <-
+  function(data,
+           keep_cols,
+           years,
+           num_fish) {
+    dfs <- lapply(years, function (year) {
+      df_common_cols <-
+        data %>%
+        filter(Year == year) %>%
+        select(all_of(keep_cols))
+      
+      
+      df_num_fish <-
+        data %>%
+        filter(Year == year) %>%
+        group_by(haul.id) %>%
+        summarise(num_fish = sum(HLNoAtLngt), .groups = 'drop')
+      
+      return (unique(merge(
+        df_common_cols,
+        df_num_fish,
+        by = c('haul.id')
+      )))
+    })
+    return (dfs)
+  }
+
+# add_100_area_and_abundance <- function (data,
+#                                         keep_cols,
+#                                         years,
+#                                         haul_distance,
+#                                         door_distance,
+#                                         wing_distance,
+#                                         num_fish) {
+#
+# }
