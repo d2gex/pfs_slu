@@ -28,8 +28,7 @@ calculate_abundance <- function(area, num_fish, to_km = FALSE) {
 select_working_data <-
   function(data,
            keep_cols,
-           years,
-           num_fish) {
+           years) {
     dfs <- lapply(years, function (year) {
       df_common_cols <-
         data %>%
@@ -52,12 +51,12 @@ select_working_data <-
     return (dfs)
   }
 
-# add_100_area_and_abundance <- function (data,
-#                                         keep_cols,
-#                                         years,
-#                                         haul_distance,
-#                                         door_distance,
-#                                         wing_distance,
-#                                         num_fish) {
-#
-# }
+calculate_abundance_by_haul_km2 <- function(data, wing_distance) {
+  m2_in_km2 <- 10 ** 6
+  data <-
+    data %>%
+    mutate(area_100_m2 = calculate_100_area(Distance, DoorSpread, wing_distance)) %>%
+    mutate(area_100_km2 = round(area_100_m2 / m2_in_km2, 4)) %>%
+    mutate(abundance_km2 = calculate_abundance(area_100_m2, num_fish, to_km = TRUE))
+  return(data)
+}
