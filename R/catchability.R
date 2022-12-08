@@ -57,6 +57,19 @@ calculate_abundance_by_haul_km2 <- function(data, wing_distance) {
     data %>%
     mutate(area_100_m2 = calculate_100_area(Distance, DoorSpread, wing_distance)) %>%
     mutate(area_100_km2 = round(area_100_m2 / m2_in_km2, 4)) %>%
-    mutate(abundance_km2 = calculate_abundance(area_100_m2, num_fish, to_km = TRUE))
+    mutate(abundance_km2 = calculate_abundance(area_100_m2, num_fish, to_km = TRUE)) %>%
+    arrange(-abundance_km2)
   return(data)
+}
+
+calculate_abundance_and_num_hauls_by_ices_km2 <- function(data) {
+  return (
+    data %>% group_by(StatRec) %>%
+      summarise(
+        num_hauls = n(),
+        total_area = sum(area_100_km2),
+        total_aboundance = sum(abundance_km2)
+      ) %>%
+      arrange(-total_aboundance)
+  )
 }
