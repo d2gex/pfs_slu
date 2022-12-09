@@ -37,10 +37,8 @@ year_abundances_by_ices <-
 # Venn diagram showing ices intersection in 2003 and 2011
 
 ices_survey_square_by_year <-
-  list(
-    y_2003 = year_abundances_by_ices[[1]]$StatRec,
-    y_2011 = year_abundances_by_ices[[2]]$StatRec
-  )
+  list(y_2003 = year_abundances_by_ices[[1]]$StatRec,
+       y_2011 = year_abundances_by_ices[[2]]$StatRec)
 
 ices_hauling_by_year_plot <- ggVennDiagram(
   ices_survey_square_by_year,
@@ -48,8 +46,58 @@ ices_hauling_by_year_plot <- ggVennDiagram(
   label_size = 3,
   set_size = 3
 ) +
-  ggtitle("Ices squared surveyed in 2003 and 2011") +
+  ggtitle("ICES squared surveyed in 2003 and 2011") +
   theme(
     legend.position = "none",
     plot.title = element_text(size = 10, hjust = 0.5, face = "bold")
   )
+
+# Comparing abundances through ices squares
+y_ab <-
+  year_abundances_by_ices[[1]] [, c('StatRec',
+                                    'num_hauls',
+                                    'total_aboundance')] %>%
+  mutate(year = 2003)
+
+y_ab_2011 <-
+  year_abundances_by_ices[[2]] [, c('StatRec',
+                                    'num_hauls',
+                                    'total_aboundance')] %>%
+  mutate(year = 2011)
+
+y_ab <-
+  rbind(y_ab, y_ab_2011) %>%
+  mutate(total_aboundance = round(total_aboundance / 1000, 3))
+
+ggplot(y_ab,
+       aes(
+         x = StatRec,
+         y = total_aboundance,
+         group = year,
+         fill = factor(year)
+       )) +
+  geom_bar(position = "dodge",
+           stat = "identity",) +
+  ylab(expression("Abundance in thousands/km" ^ "2")) +
+  xlab("ICES statistic squares") +
+  scale_fill_discrete(name = "Years") +
+  scale_y_continuous(breaks = seq(min(y_ab$total_aboundance),
+                                  max(y_ab$total_aboundance), by = 1000)) +
+  ggtitle("Aboundance for the years 2003 and 2011 across different ICES statistic squares")
+
+#
+ggplot(y_ab,
+       aes(
+         x = StatRec,
+         y = num_hauls,
+         group = year,
+         fill = factor(year)
+       )) +
+  geom_bar(position = "dodge",
+           stat = "identity",) +
+  ylab("Number of hauls") +
+  xlab("ICES statistic squares") +
+  scale_fill_discrete(name = "Years") +
+  scale_y_continuous(breaks = seq(min(y_ab$num_hauls),
+                                  max(y_ab$num_hauls), by = 1)) +
+  ggtitle("Number of hauls for the years 2003 and 2011 across different ICES statistic squares")
