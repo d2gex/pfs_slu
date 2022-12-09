@@ -83,7 +83,11 @@ haul_year_barplot <- ggplot(y_ab,
   scale_fill_discrete(name = "Years") +
   scale_y_continuous(breaks = seq(min(y_ab$total_abundance),
                                   max(y_ab$total_abundance), by = 1000)) +
-  ggtitle("Aboundance for the years 2003 and 2011 across different ICES statistic squares")
+  ggtitle("A) Aboundance for 2003 and 2011 across different ICES statistic squares") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 11,
+                                  hjust = 0.5,
+                                  face = "bold"))
 
 # Comparing hauls through ices squares
 ices_year_barplot <- ggplot(y_ab,
@@ -100,7 +104,12 @@ ices_year_barplot <- ggplot(y_ab,
   scale_fill_discrete(name = "Years") +
   scale_y_continuous(breaks = seq(min(y_ab$num_hauls),
                                   max(y_ab$num_hauls), by = 1)) +
-  ggtitle("Number of hauls for the years 2003 and 2011 across different ICES statistic squares")
+  ggtitle("B) Number of hauls for 2003 and 2011 across different ICES statistic squares") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 11,
+                                  hjust = 0.5,
+                                  face = "bold"))
+
 
 # Export abundance by hauls and year to csv
 write.csv(year_abundances_by_hauls[[1]],
