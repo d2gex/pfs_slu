@@ -75,7 +75,7 @@ calculate_abundance_and_num_hauls_by_ices_km2 <- function(data) {
     summarise(
       num_hauls = n(),
       total_area = sum(area_100_km2),
-      total_aboundance = sum(abundance_km2)
+      total_abundance = sum(abundance_km2)
     )
   
   # Get the atitude and longitude as the first row from each long-lat-statrec group
@@ -93,6 +93,6 @@ calculate_abundance_and_num_hauls_by_ices_km2 <- function(data) {
       all.y = TRUE,
       all.x = FALSE
     ) %>%
-      arrange(-total_aboundance)
+      arrange(-total_abundance)
   )
 }

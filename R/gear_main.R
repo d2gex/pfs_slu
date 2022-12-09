@@ -56,43 +56,43 @@ ices_hauling_by_year_plot <- ggVennDiagram(
 y_ab <-
   year_abundances_by_ices[[1]] [, c('StatRec',
                                     'num_hauls',
-                                    'total_aboundance')] %>%
+                                    'total_abundance')] %>%
   mutate(year = 2003)
 
 y_ab_2011 <-
   year_abundances_by_ices[[2]] [, c('StatRec',
                                     'num_hauls',
-                                    'total_aboundance')] %>%
+                                    'total_abundance')] %>%
   mutate(year = 2011)
 
 y_ab <-
   rbind(y_ab, y_ab_2011) %>%
-  mutate(total_aboundance = round(total_aboundance / 1000, 3))
+  mutate(total_abundance = round(total_abundance / 1000, 3))
 
-ggplot(y_ab,
-       aes(
-         x = StatRec,
-         y = total_aboundance,
-         group = year,
-         fill = factor(year)
-       )) +
+haul_year_barplot <- ggplot(y_ab,
+                            aes(
+                              x = StatRec,
+                              y = total_abundance,
+                              group = year,
+                              fill = factor(year)
+                            )) +
   geom_bar(position = "dodge",
            stat = "identity",) +
   ylab(expression("Abundance in thousands/km" ^ "2")) +
   xlab("ICES statistic squares") +
   scale_fill_discrete(name = "Years") +
-  scale_y_continuous(breaks = seq(min(y_ab$total_aboundance),
-                                  max(y_ab$total_aboundance), by = 1000)) +
+  scale_y_continuous(breaks = seq(min(y_ab$total_abundance),
+                                  max(y_ab$total_abundance), by = 1000)) +
   ggtitle("Aboundance for the years 2003 and 2011 across different ICES statistic squares")
 
-#
-ggplot(y_ab,
-       aes(
-         x = StatRec,
-         y = num_hauls,
-         group = year,
-         fill = factor(year)
-       )) +
+# Comparing hauls through ices squares
+ices_year_barplot <- ggplot(y_ab,
+                            aes(
+                              x = StatRec,
+                              y = num_hauls,
+                              group = year,
+                              fill = factor(year)
+                            )) +
   geom_bar(position = "dodge",
            stat = "identity",) +
   ylab("Number of hauls") +
@@ -101,3 +101,13 @@ ggplot(y_ab,
   scale_y_continuous(breaks = seq(min(y_ab$num_hauls),
                                   max(y_ab$num_hauls), by = 1)) +
   ggtitle("Number of hauls for the years 2003 and 2011 across different ICES statistic squares")
+
+# Export abundance by hauls and year to csv
+write.csv(year_abundances_by_hauls[[1]],
+          file.path(OUTPUTS_PATH, 'hauls_2003.csv'))
+write.csv(year_abundances_by_hauls[[2]],
+          file.path(OUTPUTS_PATH, 'hauls_2011.csv'))
+write.csv(year_abundances_by_ices[[1]],
+          file.path(OUTPUTS_PATH, 'ices_2003.csv'))
+write.csv(year_abundances_by_ices[[2]],
+          file.path(OUTPUTS_PATH, 'ices_2011.csv'))
