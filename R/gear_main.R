@@ -1,7 +1,10 @@
 source("R/config.R")
 source ("R/catchability.R")
+source("R/utils.R")
 library(ggVennDiagram)
 library(ggplot2)
+library(ggpubr)
+
 
 sprat_data[sapply(sprat_data, is.na)] <- 0
 selected_cols <-
@@ -83,11 +86,16 @@ haul_year_barplot <- ggplot(y_ab,
   scale_fill_discrete(name = "Years") +
   scale_y_continuous(breaks = seq(min(y_ab$total_abundance),
                                   max(y_ab$total_abundance), by = 1000)) +
-  ggtitle("A) Aboundance for 2003 and 2011 across different ICES statistic squares") +
+  ggtitle("A) Abundance for 2003 and 2011 across different ICES statistic squares") +
   theme_bw() +
-  theme(plot.title = element_text(size = 11,
-                                  hjust = 0.5,
-                                  face = "bold"))
+  theme(
+    plot.title = element_text(size = 11,
+                              hjust = 0.5,
+                              face = "bold"),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()
+  )
 
 # Comparing hauls through ices squares
 ices_year_barplot <- ggplot(y_ab,
@@ -112,11 +120,26 @@ ices_year_barplot <- ggplot(y_ab,
 
 
 # Export abundance by hauls and year to csv
-write.csv(year_abundances_by_hauls[[1]],
-          file.path(OUTPUTS_PATH, 'hauls_2003.csv'))
-write.csv(year_abundances_by_hauls[[2]],
-          file.path(OUTPUTS_PATH, 'hauls_2011.csv'))
-write.csv(year_abundances_by_ices[[1]],
-          file.path(OUTPUTS_PATH, 'ices_2003.csv'))
-write.csv(year_abundances_by_ices[[2]],
-          file.path(OUTPUTS_PATH, 'ices_2011.csv'))
+# write.csv(year_abundances_by_hauls[[1]],
+#           file.path(OUTPUTS_PATH, 'hauls_2003.csv'))
+# write.csv(year_abundances_by_hauls[[2]],
+#           file.path(OUTPUTS_PATH, 'hauls_2011.csv'))
+# write.csv(year_abundances_by_ices[[1]],
+#           file.path(OUTPUTS_PATH, 'ices_2003.csv'))
+# write.csv(year_abundances_by_ices[[2]],
+#           file.path(OUTPUTS_PATH, 'ices_2011.csv'))
+
+to_path <-
+  paste("outputs/hauls_ices_abundance.pdf")
+
+outer_grid <- ggarrange(
+  plotlist = list(haul_year_barplot, ices_year_barplot),
+  ncol = 1,
+  nrow = 2
+)
+
+plots_to_pdf(list(outer_grid),
+             to_path,
+             paper_type,
+             paper_height,
+             paper_width)
