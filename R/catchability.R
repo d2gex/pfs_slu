@@ -58,18 +58,41 @@ calculate_abundance_by_haul_km2 <- function(data, wing_distance) {
     mutate(area_100_m2 = calculate_100_area(Distance, DoorSpread, wing_distance)) %>%
     mutate(area_100_km2 = round(area_100_m2 / m2_in_km2, 4)) %>%
     mutate(abundance_km2 = calculate_abundance(area_100_m2, num_fish, to_km = TRUE)) %>%
-    arrange(-abundance_km2)
-  return(data)
+    select (haul.id,
+            StatRec,
+            HaulLat,
+            HaulLong,
+            num_fish,
+            area_100_km2,
+            abundance_km2) %>%
+    arrange(-abundance_km2) %>%
+    return(data)
 }
 
 calculate_abundance_and_num_hauls_by_ices_km2 <- function(data) {
+  # Calculate the total abundance per ices square
+  ices_summary <- data %>% group_by(StatRec) %>%
+    summarise(
+      num_hauls = n(),
+      total_area = sum(area_100_km2),
+      total_aboundance = sum(abundance_km2)
+    )
+  
+  # Get the atitude and longitude as the first row from each long-lat-statrec group
+  data <-
+    data %>%
+    select (StatRec, HaulLat, HaulLong) %>%
+    group_by(StatRec) %>%
+    filter(row_number() == 1)
+  
   return (
-    data %>% group_by(StatRec) %>%
-      summarise(
-        num_hauls = n(),
-        total_area = sum(area_100_km2),
-        total_aboundance = sum(abundance_km2)
-      ) %>%
+    merge(
+      data,
+      ices_summary,
+      by = c('StatRec'),
+      all.y = TRUE,
+      all.x = FALSE
+    ) %>%
       arrange(-total_aboundance)
   )
 }
