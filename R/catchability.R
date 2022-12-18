@@ -71,11 +71,12 @@ calculate_abundance_by_haul_km2 <- function(data, wing_distance) {
 
 calculate_abundance_and_num_hauls_by_ices_km2 <- function(data) {
   # Calculate the total abundance per ices square
-  ices_summary <- data %>% group_by(StatRec) %>%
+  ices_summary <- data %>% 
+    group_by(StatRec) %>%
     summarise(
       num_hauls = n(),
       total_area = sum(area_100_km2),
-      total_abundance = sum(abundance_km2)
+      total_abundance = sum(abundance_km2) / num_hauls
     )
   
   # Get the atitude and longitude as the first row from each long-lat-statrec group
